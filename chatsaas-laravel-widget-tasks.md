@@ -125,7 +125,7 @@ below. Re-read it before starting if any task here feels under-specified.
   - Print a reminder that `gate_ability` defaults to deny-all and MUST be defined in the host's own
     `AppServiceProvider` before the assistant will work for anyone — include the exact
     `Gate::define(...)` snippet in the command's own output, not just the README.
-- [ ] **3.2** Manually run `php artisan chatsaas:install` twice in a row in a scratch Laravel app to
+- [x] **3.2** Manually run `php artisan chatsaas:install` twice in a row in a scratch Laravel app to
   confirm idempotency (second run doesn't duplicate `.env` entries or crash).
 
 ## Phase 4 — Tests (Orchestra Testbench)
