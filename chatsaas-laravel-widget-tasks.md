@@ -22,8 +22,8 @@ below. Re-read it before starting if any task here feels under-specified.
 
 ## Phase 0 — New repo setup
 
-- [ ] **0.1** Create a new private Git repository: `diagonal-software/chatsaas-laravel-widget` (or
-  agreed name). Do this in its own directory, entirely separate from the m2munity checkout.
+- [x] **0.1** Create a new private Git repository. Done as `sajan-ft9/chatsaas-laravel-widget` on
+  GitHub (not yet the `diagonal-software` org — revisit if/when this should move under the org).
 - [x] **0.2** Scaffold a standard Composer package layout:
   ```
   chatsaas-laravel-widget/
@@ -170,7 +170,8 @@ below. Re-read it before starting if any task here feels under-specified.
   (`callable(Authenticatable $user): array`, merged into the token payload in
   `AssistantIdentity::tokenFor()`) and have m2munity's own config supply the Spatie-specific
   closure — do not put `customer()`/`getRoleNames()` back into the package itself.
-- [ ] **6.1** Tag `v0.1.0` in the new repo.
+- [x] **6.1** Tag `v0.1.0` in the new repo. Done ahead of the rest of Phase 6, to unblock
+  installing via a real `composer require` (not a local path repo) while dogfooding is pending.
 - [ ] **6.2** In the m2munity repo, add the VCS-repository entry to `code/composer.json` pointing at
   the new private repo, and `composer require chatsaas/laravel-widget:^0.1`.
 - [ ] **6.3** Run `php artisan chatsaas:install` inside m2munity's own container. Confirm it doesn't
