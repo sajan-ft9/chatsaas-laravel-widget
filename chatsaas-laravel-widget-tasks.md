@@ -161,6 +161,15 @@ below. Re-read it before starting if any task here feels under-specified.
 
 ## Phase 6 — Dogfood in m2munity
 
+- [ ] **6.0** Resolve the `companyId`/`role` JWT claims gap: the package's `AssistantIdentity`
+  dropped these (Spatie/`customer()`-specific, package must stay generic — see 1.1). Before
+  reusing them, confirm with the Yuka/widget side whether they're purely display context for the
+  assistant (nothing in the REST API path uses them — auth is done via
+  `AssistantServiceAuth` re-resolving + impersonating the user, not via JWT claims) or load-bearing
+  somewhere non-obvious. If still needed, add an `extra_claims` callable to `config/chatsaas.php`
+  (`callable(Authenticatable $user): array`, merged into the token payload in
+  `AssistantIdentity::tokenFor()`) and have m2munity's own config supply the Spatie-specific
+  closure — do not put `customer()`/`getRoleNames()` back into the package itself.
 - [ ] **6.1** Tag `v0.1.0` in the new repo.
 - [ ] **6.2** In the m2munity repo, add the VCS-repository entry to `code/composer.json` pointing at
   the new private repo, and `composer require chatsaas/laravel-widget:^0.1`.
