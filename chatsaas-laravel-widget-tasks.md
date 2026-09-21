@@ -24,7 +24,7 @@ below. Re-read it before starting if any task here feels under-specified.
 
 - [ ] **0.1** Create a new private Git repository: `diagonal-software/chatsaas-laravel-widget` (or
   agreed name). Do this in its own directory, entirely separate from the m2munity checkout.
-- [ ] **0.2** Scaffold a standard Composer package layout:
+- [x] **0.2** Scaffold a standard Composer package layout:
   ```
   chatsaas-laravel-widget/
   ├── composer.json
@@ -53,21 +53,21 @@ below. Re-read it before starting if any task here feels under-specified.
       ├── TestCase.php
       └── Feature/
   ```
-- [ ] **0.3** Write `composer.json`: package name `chatsaas/laravel-widget`, `type: library`,
+- [x] **0.3** Write `composer.json`: package name `chatsaas/laravel-widget`, `type: library`,
   `autoload.psr-4` for `Chatsaas\LaravelWidget\` → `src/`, `autoload-dev.psr-4` for tests,
   `require` on `illuminate/support` + `firebase/php-jwt` (or whatever JWT lib `AssistantIdentity`
   currently uses — check the source file), `require-dev` on `orchestra/testbench` + `phpunit/phpunit`,
   and a `extra.laravel.providers`/`aliases` block so Laravel's package auto-discovery registers
   `ChatsaasServiceProvider` without the client editing `config/app.php`.
-- [ ] **0.4** Confirm `composer validate` passes and `composer install` succeeds in the new repo
+- [x] **0.4** Confirm `composer validate` passes and `composer install` succeeds in the new repo
   before writing any real code.
 
 ## Phase 1 — Extract & generalize the plumbing
 
-- [ ] **1.1** Copy `AssistantIdentity.php` into `src/`, namespace to `Chatsaas\LaravelWidget`.
+- [x] **1.1** Copy `AssistantIdentity.php` into `src/`, namespace to `Chatsaas\LaravelWidget`.
   Replace every `config('services.assistant.*')` read with `config('chatsaas.*')`. No other logic
   changes — this class should not know anything about m2munity.
-- [ ] **1.2** Copy `AssistantServiceAuth.php` into `src/Http/Middleware/`, same config-key swap.
+- [x] **1.2** Copy `AssistantServiceAuth.php` into `src/Http/Middleware/`, same config-key swap.
   Replace the hardcoded `User::find($request->input('userId'))` with:
   ```php
   $model = config('chatsaas.user_model');
@@ -75,32 +75,32 @@ below. Re-read it before starting if any task here feels under-specified.
   ```
   (Keep it this simple for v1 — no separate `ResolvesAssistantUser` interface unless a real need
   shows up; a config-driven model class is enough per the design doc's "don't overbuild v1" call.)
-- [ ] **1.3** After resolving `$user`, add the Gate check before impersonating:
+- [x] **1.3** After resolving `$user`, add the Gate check before impersonating:
   ```php
   if (!$user || !\Illuminate\Support\Facades\Gate::forUser($user)->allows(config('chatsaas.gate_ability'))) {
       return response()->json(['error' => 'Forbidden'], 403);
   }
   ```
-- [ ] **1.4** Write `config/chatsaas.php` with exactly the keys from the design doc: `identity_secret`,
+- [x] **1.4** Write `config/chatsaas.php` with exactly the keys from the design doc: `identity_secret`,
   `service_key`, `widget_key`, `api_endpoint`, `widget_js`, `token_ttl` (default 600),
   `user_model` (default `\App\Models\User::class` — this is safe as a *default string*, the package
   doesn't need the class to exist until runtime), `gate_ability` (default `'use-chatsaas'`).
-- [ ] **1.5** Extract the widget `<script>` block from m2munity's `layouts/app.blade.php` into
+- [x] **1.5** Extract the widget `<script>` block from m2munity's `layouts/app.blade.php` into
   `resources/views/widget-embed.blade.php`, parameterized entirely from `config('chatsaas.*')` —
   no m2munity-specific text/branding left in it.
-- [ ] **1.6** Extract the `/session/chat-token` route + its closure into `routes/chatsaas.php` and a
+- [x] **1.6** Extract the `/session/chat-token` route + its closure into `routes/chatsaas.php` and a
   proper `ChatTokenController@refresh` method (cleaner than an inline closure for a package).
 
 ## Phase 2 — Service provider
 
-- [ ] **2.1** Write `ChatsaasServiceProvider::register()`: merge `config/chatsaas.php`.
-- [ ] **2.2** Write `ChatsaasServiceProvider::boot()`:
+- [x] **2.1** Write `ChatsaasServiceProvider::register()`: merge `config/chatsaas.php`.
+- [x] **2.2** Write `ChatsaasServiceProvider::boot()`:
   - Publish config (`vendor:publish --tag=chatsaas-config`)
   - Publish the widget-embed view (`--tag=chatsaas-views`)
   - Load `routes/chatsaas.php`
   - Register the `chatsaas.service` middleware alias pointing at `AssistantServiceAuth`
   - Register `InstallCommand` when running in console
-- [ ] **2.3** **Default-deny safety net**: in `boot()`, register a fallback Gate definition ONLY if
+- [x] **2.3** **Default-deny safety net**: in `boot()`, register a fallback Gate definition ONLY if
   the host app hasn't already defined one for `config('chatsaas.gate_ability')`:
   ```php
   if (!Gate::has(config('chatsaas.gate_ability'))) {
@@ -112,7 +112,7 @@ below. Re-read it before starting if any task here feels under-specified.
 
 ## Phase 3 — Install command
 
-- [ ] **3.1** Write `chatsaas:install` (`InstallCommand`):
+- [x] **3.1** Write `chatsaas:install` (`InstallCommand`):
   - Call `$this->call('vendor:publish', ['--tag' => 'chatsaas-config'])` and `chatsaas-views`.
   - Check if `CHATSAAS_IDENTITY_SECRET` and `CHATSAAS_SERVICE_KEY` already exist in `.env`; if not,
     generate each via `Str::random(32)` and append to `.env` (idempotent — re-running the command
@@ -130,23 +130,23 @@ below. Re-read it before starting if any task here feels under-specified.
 
 ## Phase 4 — Tests (Orchestra Testbench)
 
-- [ ] **4.1** Set up `tests/TestCase.php` extending `Orchestra\Testbench\TestCase`, registering
+- [x] **4.1** Set up `tests/TestCase.php` extending `Orchestra\Testbench\TestCase`, registering
   `ChatsaasServiceProvider` and a minimal in-memory `User` model/migration for the test app —
   deliberately NOT reusing anything from m2munity.
-- [ ] **4.2** Test: `AssistantServiceAuth` rejects a request with a missing/wrong service key (401).
-- [ ] **4.3** Test: rejects an unknown `userId` (403).
-- [ ] **4.4** Test: **default-deny** — a valid user, valid service key, but no `Gate::define()` set
+- [x] **4.2** Test: `AssistantServiceAuth` rejects a request with a missing/wrong service key (401).
+- [x] **4.3** Test: rejects an unknown `userId` (403).
+- [x] **4.4** Test: **default-deny** — a valid user, valid service key, but no `Gate::define()` set
   up at all → still rejected (403). This is the test that proves Task 2.3 actually works.
-- [ ] **4.5** Test: once the test app defines `Gate::define('use-chatsaas', fn () => true)`, the same
+- [x] **4.5** Test: once the test app defines `Gate::define('use-chatsaas', fn () => true)`, the same
   request succeeds and the request is impersonated as that user (`auth()->id()` matches).
-- [ ] **4.6** Test: `AssistantIdentity::tokenFor()` produces a JWT that decodes with the configured
+- [x] **4.6** Test: `AssistantIdentity::tokenFor()` produces a JWT that decodes with the configured
   secret and expires per `token_ttl`.
-- [ ] **4.7** Test: `chatsaas:install` run against a scratch Testbench app writes both secrets into
+- [x] **4.7** Test: `chatsaas:install` run against a scratch Testbench app writes both secrets into
   `.env` and is a no-op (doesn't duplicate) on a second run.
 
 ## Phase 5 — Documentation
 
-- [ ] **5.1** Write `README.md`: what this package does (one paragraph), install command, the two
+- [x] **5.1** Write `README.md`: what this package does (one paragraph), install command, the two
   secrets and exactly where they go (client's `.env` → Chatsaas dashboard), a minimal
   `Gate::define()` example, a minimal "protect one of your own endpoints" example
   (`Route::middleware('chatsaas.service')->get(...)`), and a troubleshooting table covering at least:
@@ -154,10 +154,10 @@ below. Re-read it before starting if any task here feels under-specified.
   `.env` and the dashboard, and widget not rendering (check `gate_ability` on the current user).
   This README **is the entire support surface** per the docs-only decision — write it assuming the
   reader has never seen this package before and has no one to ask.
-- [ ] **5.2** Add a clearly separate "Network-restricted environments" section documenting the git
+- [x] **5.2** Add a clearly separate "Network-restricted environments" section documenting the git
   submodule + Composer `path`-repository fallback from the design doc, explicitly labeled as the
   fallback, not the default install path.
-- [ ] **5.3** Write `CHANGELOG.md` with a `v0.1.0` entry once Phase 4 is green.
+- [x] **5.3** Write `CHANGELOG.md` with a `v0.1.0` entry once Phase 4 is green.
 
 ## Phase 6 — Dogfood in m2munity
 
