@@ -5,6 +5,8 @@ All notable changes to this package are documented here. This project follows
 
 ## [Unreleased]
 
+## [0.2.0]
+
 - `chatsaas:install` now asks for the Eloquent user model's fully-qualified class name
   explicitly (rather than an ambiguous "model name"), so the exact `::class` reference written
   into config is unambiguous. Strips a leading `\` if the answer includes one.
