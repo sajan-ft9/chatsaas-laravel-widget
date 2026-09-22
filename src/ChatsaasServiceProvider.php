@@ -29,11 +29,11 @@ class ChatsaasServiceProvider extends ServiceProvider
 
         $this->app['router']->aliasMiddleware('chatsaas.service', AssistantServiceAuth::class);
 
-        // Default-deny safety net: only registered if the host hasn't defined this ability
-        // themselves. A package handed to many different clients must never ship "wide open"
-        // as its out-of-the-box state.
+        // Fallback safety net: only registered if the host hasn't defined this ability
+        // themselves. Resolves to `allow_by_default`, which stays false (deny) unless
+        // chatsaas:install set it via a deliberate, interactive opt-in.
         if (!Gate::has(config('chatsaas.gate_ability'))) {
-            Gate::define(config('chatsaas.gate_ability'), fn () => false);
+            Gate::define(config('chatsaas.gate_ability'), fn () => (bool) config('chatsaas.allow_by_default'));
         }
 
         if ($this->app->runningInConsole()) {

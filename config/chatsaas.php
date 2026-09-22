@@ -24,6 +24,14 @@ return [
 
     // The Gate ability that governs whether a user may use the assistant at all. The host
     // app defines what this means (Spatie permission, a plain column, anything). If the host
-    // never defines it, the package registers a deny-all fallback — see ChatsaasServiceProvider.
+    // never defines it, the package falls back to `allow_by_default` below — see
+    // ChatsaasServiceProvider.
     'gate_ability' => 'use-chatsaas',
+
+    // What the fallback Gate resolves to when the host never defines `gate_ability` themselves.
+    // Stays false (deny everyone) unless `chatsaas:install` set this during a deliberate,
+    // interactive opt-in (only offered when no permission package was detected) — never flips
+    // to true silently. A package handed to many different clients must never ship "wide open"
+    // as its out-of-the-box state.
+    'allow_by_default' => env('CHATSAAS_ALLOW_BY_DEFAULT', false),
 ];

@@ -27,7 +27,12 @@ php artisan chatsaas:install
 2. Generate `CHATSAAS_IDENTITY_SECRET` and `CHATSAAS_SERVICE_KEY` and append them to your `.env`
    (safe to re-run — it never overwrites an existing secret).
 3. Print both secrets to your terminal.
-4. Ask which Eloquent model is your "User" (or pass `--user-model=App\\Models\\Person`).
+4. Ask for the fully-qualified class name of your Eloquent User model (e.g. `App\Models\User`),
+   so it can write the exact `use`/`::class` reference into the published config — pass
+   `--user-model=App\Models\Person` to skip the prompt.
+5. If no permission package is detected, ask whether to allow every authenticated user by
+   default until you set up real access control (see below) — pass `--allow-by-default` to opt
+   in non-interactively, or just answer the prompt.
 
 ### The two secrets — where they go
 
@@ -39,6 +44,27 @@ Both are generated entirely on your side; we never see, request, or need them:
   middleware checks it.
 
 Paste both into your Chatsaas dashboard under **Settings → this app's integration**.
+
+## Laravel version compatibility
+
+| Your Laravel version | Package version tested against | If package auto-discovery is disabled, register the provider in… |
+|---|---|---|
+| 10.x | `orchestra/testbench` ^8.0 | `config/app.php` → `providers` array: add `Chatsaas\LaravelWidget\ChatsaasServiceProvider::class` |
+| 11.x | `orchestra/testbench` ^9.0 | `bootstrap/providers.php` → add `Chatsaas\LaravelWidget\ChatsaasServiceProvider::class` to the returned array (Laravel 11 moved provider registration out of `config/app.php`) |
+| 12.x | `orchestra/testbench` ^10.0 | Same as 11.x — `bootstrap/providers.php` |
+| 13.x | `orchestra/testbench` ^11.0 | Same as 11.x — `bootstrap/providers.php` |
+
+Almost everyone can ignore this table: `composer require` triggers Laravel's package
+auto-discovery automatically, which registers `ChatsaasServiceProvider` for you regardless of
+version. It only matters if your app has auto-discovery turned off (an
+`extra.laravel.dont-discover` entry in your own `composer.json` listing this package, or
+`--no-scripts` on install) — the table tells you which file to edit by hand for the Laravel
+version you're on.
+
+One thing that does **not** change across versions: the `chatsaas.service` middleware alias is
+registered directly against the router from inside the service provider, not through
+`app/Http/Kernel.php`. Laravel 11+ removed that file from the default skeleton; this package
+never needed it in the first place, on any version, so there's nothing to add there.
 
 ## The Gate ability — read this before anything else
 
@@ -59,6 +85,25 @@ Gate::define('use-chatsaas', fn ($user) => $user->is_admin);
 ```
 
 The ability name is configurable via `chatsaas.gate_ability` (default: `use-chatsaas`).
+
+### No permission package at all?
+
+If `chatsaas:install` doesn't detect `spatie/laravel-permission` (or you're running it
+interactively with no other permission system in place), it asks — once, and only
+interactively — whether to allow every authenticated user to use the assistant until you set up
+something stricter:
+
+```
+No permission package (e.g. spatie/laravel-permission) detected.
+Allow every authenticated user to use the assistant by default, until you configure something stricter? (yes/no)
+```
+
+Answering yes sets `CHATSAAS_ALLOW_BY_DEFAULT=true` in your `.env`. You can also set this
+non-interactively (CI, scripted installs) with `--allow-by-default`. If you skip the prompt, run
+`chatsaas:install --no-interaction`, or say no, the package stays deny-by-default — nothing is
+ever allowed silently. Defining your own `Gate::define(...)` always takes priority over this
+setting, so it's safe to leave `CHATSAAS_ALLOW_BY_DEFAULT=true` around even after you add real
+access control later; the Gate you define wins.
 
 ## Embedding the widget
 
@@ -92,7 +137,7 @@ changes.
 | Symptom | Cause | Fix |
 |---|---|---|
 | Widget never appears | `chatsaas.widget_key` not set, or your own `@can` guard is false | Check `.env` has `CHATSAAS_WIDGET_KEY`; check the user has the ability you gated the `@include` behind |
-| Assistant calls into your app return 403 | You haven't defined `gate_ability` yet (deny-by-default), or the resolved user fails your Gate check | Add `Gate::define(...)` per above; confirm which ability name `config('chatsaas.gate_ability')` actually is |
+| Assistant calls into your app return 403 | You haven't defined `gate_ability` yet and `CHATSAAS_ALLOW_BY_DEFAULT` isn't set (deny-by-default), or the resolved user fails your Gate check | Add `Gate::define(...)` per above, or set `CHATSAAS_ALLOW_BY_DEFAULT=true` if you genuinely want every authenticated user allowed for now; confirm which ability name `config('chatsaas.gate_ability')` actually is |
 | Assistant calls return 401 | `CHATSAAS_SERVICE_KEY` mismatch between your `.env` and the Chatsaas dashboard | Re-copy the value from `.env`, don't retype it |
 | Assistant calls return 500, "service key not configured" | `CHATSAAS_SERVICE_KEY` missing/empty in `.env` | Re-run `php artisan chatsaas:install`, or set it manually |
 | Identity token rejected by the assistant | `CHATSAAS_IDENTITY_SECRET` mismatch between your `.env` and the dashboard | Re-copy the value, don't retype it |
